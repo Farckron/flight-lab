@@ -5,10 +5,10 @@ Run from the project folder, for example:
 """
 import sys
 
-# TODO: fill in your details: plain ASCII, no spaces or underscores.
-STUDENT_ID = "000RDB000"
-FIRST_NAME = "Firstname"
-LAST_NAME = "Lastname"
+# Plain ASCII, no spaces or underscores: they go into the response file name.
+STUDENT_ID = "251ADC006"
+FIRST_NAME = "Serhii"
+LAST_NAME = "Voitov"
 
 
 def main(argv: list[str] | None = None) -> int:
