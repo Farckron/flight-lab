@@ -128,7 +128,8 @@ def main(argv: list[str] | None = None) -> int:
     # Expected runtime problems become one "Error:" line instead of a traceback.
     # OSError covers missing or unreadable files and folders. ValueError covers
     # bad JSON (json.JSONDecodeError), a file that is not UTF-8
-    # (UnicodeDecodeError) and the wrong-shape errors raised above.
+    # (UnicodeDecodeError) and the wrong-shape errors raised above. RecursionError
+    # is JSON nested so deep that json.load() gives up.
     try:
         if args.database is not None:
             db = load_database(args.database)
@@ -137,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
             db = parse_csv(args)
         if args.queries is not None:
             print(f"Responses written to {write_response(db, args.queries, args.responses)}")
-    except (OSError, ValueError, csv.Error) as error:
+    except (OSError, ValueError, RecursionError, csv.Error) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
     return 0
