@@ -9,8 +9,10 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime
 
 from csv_loader import parse_files
+from query import run_queries
 from validator import load_airports
 
 # Plain ASCII, no spaces or underscores: they go into the response file name.
@@ -32,6 +34,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-a", metavar="FILE", dest="airports", help="airport list (needed with -i and -d)")
     # No default here, so main() can tell whether -o was given at all.
     parser.add_argument("-o", metavar="FILE", dest="output", help="where to write the database (default: db.json)")
+    parser.add_argument("-q", metavar="FILE", dest="queries", help="run the queries in this JSON file")
+    parser.add_argument("-r", metavar="FOLDER", dest="responses", default=".",
+                        help="folder for the response file (default: current folder)")
     return parser
 
 
@@ -84,6 +89,23 @@ def load_database(path: str) -> list[dict]:
     return db
 
 
+def write_response(db: list[dict], query_path: str, folder: str) -> str:
+    """Run the queries from query_path and write the response file. Return its path."""
+    with open(query_path, encoding="utf-8") as f:
+        queries = json.load(f)
+    # A single bad query only gets INVALID_QUERY in its entry, but a file
+    # that is not a query object or a list of them stops the whole run.
+    if not isinstance(queries, (dict, list)) or (
+            isinstance(queries, list) and not all(isinstance(q, dict) for q in queries)):
+        raise ValueError(f"{query_path} must hold a query object or an array of them")
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    path = os.path.join(folder, f"response_{STUDENT_ID}_{FIRST_NAME}_{LAST_NAME}_{stamp}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(run_queries(db, queries), f, indent=2)
+    return path
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the whole program and return the exit code (0, 1 or 2).
 
@@ -113,6 +135,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{len(db)} flights loaded from {args.database}")
         else:
             db = parse_csv(args)
+        if args.queries is not None:
+            print(f"Responses written to {write_response(db, args.queries, args.responses)}")
     except (OSError, ValueError, csv.Error) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
